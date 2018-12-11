@@ -1,29 +1,5 @@
-certifi==2018.11.29
-chardet==3.0.4
-codecov==2.0.15
-coverage==4.5.2
-crypto==1.4.1
-Django==1.11.6
-filelock==3.0.10
-idna==2.7
-mock==2.0.0
-Naked==0.1.31
-pbr==5.1.1
-pluggy==0.8.0
-py==1.7.0
-pyasn1==0.4.4
-pycryptodomex==3.7.2
-python-alipay-sdk==1.8.0
-pytz==2018.7
-PyYAML==3.13
-requests==2.20.1
-rsa==4.0
-shellescape==3.4.1
-six==1.12.0
-toml==0.10.0
-tox==3.5.3
-urllib3==1.24.1
-virtualenv==16.1.0
+
+pip3 install Crypto
 
 支付成功
 http://unitradeprod.alipaydev.com/acq/cashierReturn.htm?sign=K1iSL1gn5tqoqf1Rrw%252BDOGYLW6ILfQDlrSUgBjVvM27Z%252FH1budgD9%252Fo2t2sQ3Seyt%252FJ0Zux%252F&outTradeNo=x21544497362.2745473&pid=2088102176683804&type=1
@@ -32,3 +8,11 @@ http://unitradeprod.alipaydev.com/acq/cashierReturn.htm?sign=K1iSL1gn5tqoqf1Rrw%
 http://127.0.0.1:8000/page2/?charset=utf-8&out_trade_no=x21544497362.2745473&method=alipay.trade.page.pay.return&total_amount=100.00&sign=IHriaoiQ7OJhx09CiBdkaVSrXjkxjIdhG2iMOdyRJshpGoIVuU3GurWIFHLvoYWiFqgp1k8M6oDSTBbMq3ZeJgUqAGk2O3AflcU%2FlQJBdp3qdXkp1SrvRyR58i3DWhkxUAN6jZOFRPIPIqMJJxiuZFnzF7LXzEmOq7klI1Pu9sioMBKt5U8xNIm4XGI%2FyKgU7opbUuKdhCVFj9KgXanpMlgXSJYbaP479TUOaBbyXNnxoGbZ9VuBwO0vuJnTbT4UBonMHZnQQLJK%2B0Q1R4EeaKP2IDHySUjuzRAnOTeFK4wlpYZnk5NCDW0kZnDvJjl1atbT65DQlk2GnN0ppVT2hw%3D%3D&trade_no=2018121122001470540200827044&auth_app_id=2016092100565912&version=1.0&app_id=2016092100565912&sign_type=RSA2&seller_id=2088102176683804&timestamp=2018-12-11+11%3A03%3A14
 
 exrnyk1787@sandbox.com
+
+git
+
+git remote add alipay_shop https://github.com/whisnos/alipay_shop.git
+
+git add good.txt read.py
+git commit -m "test commit"
+git push alipay_shop master

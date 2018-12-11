@@ -32,7 +32,7 @@ AUTH_USER_MODEL = "users.UserProfile"
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-
+print('123456')
 class UserProfile(AbstractUser):
 	name = models.CharField(max_length=30, null=True, blank=True, verbose_name="用户名")
 	gender = models.CharField(max_length=6, choices=(("male", "男"), ("female", "女")), default="female",

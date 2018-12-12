@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from datetime import datetime, date
 
 # Create your models here.
 class UserProfile(AbstractUser):
@@ -18,6 +18,7 @@ class UserProfile(AbstractUser):
 	bank_type = models.CharField(max_length=15, null=True, blank=True, verbose_name='银行类型')
 	qr_code = models.ImageField(null=True, blank=True, verbose_name='二维码')
 
+	add_time = models.DateTimeField(default=datetime.now,verbose_name='注册时间')
 	class Meta:
 		verbose_name = '用户表'
 		verbose_name_plural = verbose_name

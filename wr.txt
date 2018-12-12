@@ -13,6 +13,6 @@ git
 
 git remote add alipay_shop https://github.com/whisnos/alipay_shop.git
 
-git add good.txt read.py
+git add good.txt read.py  、、 git add -A
 git commit -m "test commit"
 git push alipay_shop master

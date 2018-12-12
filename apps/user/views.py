@@ -1,7 +1,68 @@
+from django.db.models import Q
 from django.shortcuts import render, redirect, HttpResponse
+from django.contrib.auth.backends import ModelBackend
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework_jwt.serializers import jwt_payload_handler, jwt_encode_handler
+
+from user.serializers import RegisterUserSerializer
 from utils.pay import AliPay
+from rest_framework import viewsets, mixins, status
 import json
 import time
+from user.models import UserProfile
+
+User = get_user_model()
+
+
+class CustomModelBackend(ModelBackend):
+	def authenticate(self, request, username=None, password=None, **kwargs):
+		try:
+			user = User.objects.get(Q(username=username) | Q(mobile=username))
+			if user.check_password(password):
+				return user
+		except Exception as e:
+			print(e)
+			return None
+
+
+class RegisterUserProfileViewset(viewsets.GenericViewSet, mixins.CreateModelMixin, mixins.RetrieveModelMixin,
+								 mixins.UpdateModelMixin):
+	queryset = UserProfile.objects.all()
+	serializer_class = RegisterUserSerializer
+
+	def get_permissions(self):
+		if self.action == 'retrieve':
+			return [IsAuthenticated()]
+		else:
+			return []
+
+	def get_object(self):
+		return self.request.user
+
+	def create(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+
+		user = self.perform_create(serializer)
+
+		# 负载
+		payload = jwt_payload_handler(user)
+		token = jwt_encode_handler(payload)
+
+		response_data = serializer.data
+		# 加上token
+		response_data["token"] = token
+
+		headers = self.get_success_headers(response_data)
+
+		# 返回数据
+		return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
+	def perform_create(self, serializer):
+		# 返回的UserProfile实例对象
+		return serializer.save()
 
 
 def ali():

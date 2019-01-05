@@ -168,8 +168,6 @@ REST_FRAMEWORK = {
 }
 
 # 支付宝配置
-ALIPAY_APPID = '2016092100565912'
-
-# 用户收款手续费率
-SERVICE_FEE = 0.95  # 手续费 5%
-APP_NOTIFY_URL = "http://pay.irhau.cn/alipay/receive/"
+ALIPAY_DEBUG = True
+APP_NOTIFY_URL = "http://117.31.81.96:8000/alipay/receive/"
+# APP_NOTIFY_URL = "http://pay.irhau.cn/alipay/receive/"

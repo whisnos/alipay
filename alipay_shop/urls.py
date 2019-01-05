@@ -14,9 +14,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url, include
-# from django.contrib import admin
-from django.views.generic import TemplateView
-
 import xadmin
 from user.views import NoticeInfoViewset,ChartInfoViewset, \
     QueryOrderView
@@ -25,7 +22,6 @@ from rest_framework.routers import DefaultRouter
 from user.views import RegisterUserProfileViewset
 from trade.views import OrderViewset, AlipayReceiveView, GetPayView, WithDrawViewset, TotalNumViewset
 from rest_framework_jwt.views import obtain_jwt_token
-# from trade.views import AlipayView
 
 route = DefaultRouter()
 route.register(r'users', RegisterUserProfileViewset, base_name="users")

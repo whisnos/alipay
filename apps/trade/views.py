@@ -18,7 +18,7 @@ from utils.pay import AliPay
 from utils.permissions import IsOwnerOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
-
+from alipay_shop.settings import ALIPAY_DEBUG
 
 class OrderListPagination(PageNumberPagination):
     page_size = 10
@@ -85,7 +85,7 @@ class AlipayReceiveView(views.APIView):
                 app_notify_url=None,
                 app_private_key_path=private_key_path,
                 alipay_public_key_path=ali_public_path,
-                debug=True,  # 默认False,
+                debug=ALIPAY_DEBUG,  # 默认False,
                 return_url=None
             )
             try:
@@ -224,7 +224,7 @@ class GetPayView(views.APIView):
                 app_notify_url=APP_NOTIFY_URL,
                 app_private_key_path=private_key_path,  # 个人私钥
                 alipay_public_key_path=ali_public_path,  # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
-                debug=True,  # 默认False,
+                debug=ALIPAY_DEBUG,  # 默认False,
                 # return_url="http://120.43.159.62:8000/alipay/return/"
                 return_url=return_url,
                 plat_type=str(plat_type),
@@ -239,8 +239,8 @@ class GetPayView(views.APIView):
                 out_trade_no=order_no,
                 total_amount=total_amount
             )
-            # 沙箱环境
-            re_url = "https://openapi.alipaydev.com/gateway.do?{data}".format(data=url)
+            # # 沙箱环境
+            # re_url = "https://openapi.alipaydev.com/gateway.do?{data}".format(data=url)
             # print('生成的支付链接', re_url)
             order = OrderInfo()
             order.user_id = user.id
@@ -250,14 +250,14 @@ class GetPayView(views.APIView):
             order.user_msg = user_msg
             order.order_id = order_id
             order.receive_way = receive_way
-            order.pay_url = re_url
+            order.pay_url = url
             # order.time_rate = user.service_rate
             order.save()
             resp['msg'] = '创建成功'
             resp['code'] = 200
             resp['total_amount'] = total_amount
             resp['receive_way'] = receive_way
-            resp['re_url'] = re_url
+            resp['re_url'] = url
             return Response(resp)
         resp['code'] = 404
         resp['msg'] = 'key匹配错误'

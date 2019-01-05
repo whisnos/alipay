@@ -52,7 +52,10 @@ class AliPay(object):
 
         biz_content.update(kwargs)
         data = self.build_body(self.pay_way, biz_content, self.return_url)  # alipay.trade.wap.pay
-        return self.sign_data(data)
+        url=self.sign_data(data)
+        # 沙箱环境
+        re_url = self.__gateway+"?{data}".format(data=url)
+        return re_url
 
     def build_body(self, method, biz_content, return_url=None):
         data = {

@@ -1,7 +1,6 @@
 import xadmin
 from xadmin import views
 from .models import NoticeInfo, UserProfile
-from django.contrib.auth.models import AbstractUser
 
 
 # Register your models here.

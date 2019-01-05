@@ -10,6 +10,7 @@ from utils.make_code import make_uuid_code, make_auth_code
 from rest_framework_jwt.utils import jwt_decode_handler
 from django.db.models import Q
 
+
 class RegisterUserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(label='用户名', required=True, min_length=5, max_length=20, allow_blank=False,
                                      validators=[
@@ -52,7 +53,6 @@ class RegisterUserSerializer(serializers.ModelSerializer):
         user.auth_code = make_auth_code()
         user.is_active = False
         user.save()
-        # print('ppppppppppppp')
         return user
 
 
@@ -61,9 +61,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                                      style={'input_type': 'password'}, help_text='密码')
     password2 = serializers.CharField(label='确认密码', write_only=True, required=True, allow_blank=False, min_length=6,
                                       style={'input_type': 'password'}, help_text='重复密码')
+
     class Meta:
         model = UserProfile
-        # read_only_fields=('username',)
         fields = ['username', 'password', 'password2']
 
     def validate(self, attrs):
@@ -78,7 +78,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             del validated_data['mobile']
         except:
             pass
-        # print('测试1')
         user_token = self.context['request'].session.get('token')
         user_dict = jwt_decode_handler(user_token)
         user_id = user_dict.get('user_id')
@@ -92,10 +91,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
-    """
-    用户详情序列化类
-
-    """
     username = serializers.CharField(label='用户名', read_only=True, allow_blank=False, help_text='用户名')
     uid = serializers.CharField(label='用户uid', read_only=True, allow_blank=False, help_text='用户uid')
     mobile = serializers.CharField(label='手机号', read_only=True, allow_blank=False, help_text='手机号')
@@ -105,7 +100,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     today_receive = serializers.SerializerMethodField(read_only=True)
 
     def get_today_receive(self, obj):
-        order_queryset = OrderInfo.objects.filter(Q(pay_status='TRADE_SUCCESS')|Q(pay_status='NOTICE_FAIL'),user=obj,
+        order_queryset = OrderInfo.objects.filter(Q(pay_status='TRADE_SUCCESS') | Q(pay_status='NOTICE_FAIL'), user=obj,
                                                   add_time__gt=time.strftime('%Y-%m-%d', time.localtime(time.time())))
         all_num = 0
         for num in order_queryset:
@@ -149,7 +144,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
                                                       receive_time__gte=time.strftime('%Y-%m-%d',
                                                                                       time.localtime(time.time())))
         all_num = 0
-        # print(111)
         for num in order_queryset:
             all_num += num.money
         return ('%.2f' % all_num)

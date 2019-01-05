@@ -16,7 +16,7 @@ class OrderInfoAdmin(object):
     model_icon = 'fa fa-th-list'
 
     # 只读字段
-    readonly_fields = ['user', 'pay_status', 'pay_time', 'add_time', 'total_amount', 'order_no', 'trade_no',
+    readonly_fields = ['user','pay_time', 'add_time', 'total_amount', 'order_no', 'trade_no',
                        'receive_way', 'order_id', 'pay_url']
     # 每页显示几条
     # list_per_page = 10

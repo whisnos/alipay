@@ -20,6 +20,7 @@ from utils.permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
 
+
 class CustomModelBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
         try:
@@ -70,25 +71,14 @@ class RegisterUserProfileViewset(viewsets.GenericViewSet, mixins.CreateModelMixi
 
         user = self.perform_create(serializer)
 
-        # 负载
-        payload = jwt_payload_handler(user)
-        token = jwt_encode_handler(payload)
-
         response_data = serializer.data
-        # 加上token
-        # response_data["token"] = token
-
-        # response_data["username"] = user.username
         headers = self.get_success_headers(response_data)
-
-        # 返回数据
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_object(self):
         return self.request.user
 
     def perform_create(self, serializer):
-        # 返回的UserProfile实例对象
         return serializer.save()
 
     def update(self, request, *args, **kwargs):
@@ -97,11 +87,8 @@ class RegisterUserProfileViewset(viewsets.GenericViewSet, mixins.CreateModelMixi
         password = self.request.data.get('password', '')
         password2 = self.request.data.get('password2', '')
         notify_url = self.request.data.get('notify_url', '')
-        # print(456, notify_url)
         qq = self.request.data.get('qq', '')
-        # print(11, password, password2)
         user = self.get_object()
-        # print(88, qq)
         if password == password2:
             if password:
                 user.set_password(password)
@@ -110,36 +97,7 @@ class RegisterUserProfileViewset(viewsets.GenericViewSet, mixins.CreateModelMixi
         if qq:
             user.qq = qq
         user.save()
-        # response_data = serializer.data
-        # headers = self.get_success_headers(response_data)
         return Response(status=status.HTTP_201_CREATED)
-
-
-def ali():
-    # 沙箱环境地址：https://openhome.alipay.com/platform/appDaily.htm?tab=info
-    app_id = "2016092100565912"
-    # POST请求，用于最后的检测
-    notify_url = "http://127.0.0.1:8000/page2/"
-    # notify_url = "http://www.wupeiqi.com:8804/page2/"
-
-    # GET请求，用于页面的跳转展示
-    return_url = "http://127.0.0.1:8000/page2/"
-    # return_url = "http://www.wupeiqi.com:8804/page2/"
-
-    merchant_private_key_path = "keys/app_private_2048.txt"
-    alipay_public_key_path = "keys/alipay_public_2048.txt"
-
-    alipay = AliPay(
-        appid=app_id,
-        # 异步的通知接口，当在浏览器扫描创建订单后，这个时候关闭页面，此时可以在客户端或者支护宝账号里面看到这个为支付完成的信息
-        app_notify_url=notify_url,
-        # 同步接口，支付成功后会跳转的接口
-        return_url=return_url,
-        app_private_key_path=merchant_private_key_path,
-        alipay_public_key_path=alipay_public_key_path,  # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥
-        debug=True,  # 默认False,
-    )
-    return alipay
 
 
 class NoticeListPagination(PageNumberPagination):
@@ -150,7 +108,6 @@ class NoticeListPagination(PageNumberPagination):
 class NoticeInfoViewset(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     serializer_class = NoticeInfoSerializer
     queryset = NoticeInfo.objects.all().order_by('-add_time')
-    # JWT认证
     authentication_classes = (JSONWebTokenAuthentication, SessionAuthentication)
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
     pagination_class = NoticeListPagination
@@ -164,11 +121,11 @@ class NoticeInfoViewset(viewsets.GenericViewSet, mixins.RetrieveModelMixin, mixi
             return []
 
 
+from django.db.models import Q
+
+
 class ChartInfoViewset(viewsets.GenericViewSet, mixins.ListModelMixin):
-    # pagination_class = NoticeListPagination
     serializer_class = OrderListSerializer
-    # today_time = time.strftime('%Y-%m-%d', time.localtime())
-    # queryset = OrderInfo.objects.filter(add_time__gte=today_time,pay_status__icontains='TRADE_SUCCESS').order_by('-add_time')
     authentication_classes = (JSONWebTokenAuthentication, SessionAuthentication)
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
 
@@ -184,8 +141,10 @@ class ChartInfoViewset(viewsets.GenericViewSet, mixins.ListModelMixin):
         user = self.request.user
         if user:
             today_time = time.strftime('%Y-%m-%d', time.localtime())
-            return OrderInfo.objects.filter(user=self.request.user, add_time__gte=today_time,
-                                       pay_status__icontains='TRADE_SUCCESS').order_by('-add_time')
+            return OrderInfo.objects.filter(
+                Q(pay_status__icontains='TRADE_SUCCESS') | Q(pay_status__icontains='NOTICE_FAIL'),
+                user=self.request.user, add_time__gte=today_time,
+                ).order_by('-add_time')
         return []
 
 
@@ -196,7 +155,6 @@ class QueryOrderView(views.APIView):
         for key, value in request.data.items():
             processed_dict[key] = value
         uid = processed_dict.get('uid', '')
-        # auth_code = processed_dict.get('auth_code', '')
         order_no = processed_dict.get('order_no', '')
         user_queryset = UserProfile.objects.filter(uid=uid)
         if user_queryset:

@@ -9,6 +9,7 @@ class OrderInfo(models.Model):
         ('PAYING', '待支付'),
         ('TRADE_SUCCESS', '支付成功'),
         ('TRADE_CLOSE', '支付关闭'),
+        ('NOTICE_FAIL', '通知失败'),
     }
     # 用户
     user = models.ForeignKey(UserProfile, verbose_name='用户')

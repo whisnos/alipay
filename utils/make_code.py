@@ -33,8 +33,6 @@ def make_short_code(length):
     return code
 
 
-# print(makecode(8))
-
 # 生成订单号信息
 import time
 
@@ -44,5 +42,4 @@ def generate_order_no(userid):
     short_code = make_short_code(8)
     order_sn = "{time_str}{userid}{randstr}".format(time_str=time.strftime("%Y%m%d%H%M%S"),
                                                     userid=userid, randstr=short_code)
-    print('生成提现单号+++++++++', order_sn)
     return order_sn

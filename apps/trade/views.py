@@ -12,13 +12,14 @@ from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from .filters import OrdersFilter, WithDrawFilter
 from user.models import UserProfile
 from trade.models import OrderInfo, WithDrawMoney, BusinessInfo
-from trade.serializers import OrderDetailSerializer, OrderSerializer, OrderListSerializer, \
+from trade.serializers import OrderSerializer, OrderListSerializer, \
     GetPaySerializer, WithDrawSerializer, WithDrawCreateSerializer, TotalNumSerializer
 from utils.pay import AliPay
 from utils.permissions import IsOwnerOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 from alipay_shop.settings import ALIPAY_DEBUG
+
 
 class OrderListPagination(PageNumberPagination):
     page_size = 10
@@ -27,8 +28,7 @@ class OrderListPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class OrderViewset(mixins.DestroyModelMixin, mixins.ListModelMixin,
-                   viewsets.GenericViewSet):
+class OrderViewset(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     订单管理:
         list:  获取个人订单
@@ -44,21 +44,12 @@ class OrderViewset(mixins.DestroyModelMixin, mixins.ListModelMixin,
     filter_backends = (DjangoFilterBackend,)
     filter_class = OrdersFilter
 
-    # 搜索字段
-    # ordering_fields = ('add_time',)
     def get_serializer_class(self):
-        if self.action == "retrieve":
-            return OrderDetailSerializer
-        if self.action == "list":
-            return OrderListSerializer
-        else:
-            return OrderSerializer
+        return OrderListSerializer
 
     def get_queryset(self):
         if self.request.user.is_superuser:
-            # print('当前用户是管理员', self.request.user)
             return OrderInfo.objects.all().order_by('id')
-        # print(11111111111111111111, self.request.user)
         user = self.request.user
         if user:
             return OrderInfo.objects.filter(user=self.request.user).order_by('-add_time')
@@ -67,14 +58,12 @@ class OrderViewset(mixins.DestroyModelMixin, mixins.ListModelMixin,
 
 class AlipayReceiveView(views.APIView):
     def post(self, request):
-        # print('支付宝开始进入post')
         resp = {'msg': '操作成功', 'code': 200, 'data': []}
         processed_dict = {}
         for key, value in request.data.items():
             processed_dict[key] = value
         sign = processed_dict.pop("sign", None)
         app_id = processed_dict.get('app_id', '')
-        # print('看看看看看看2支付后，post回来 商家app_id', app_id)
         c_queryset = BusinessInfo.objects.filter(c_appid=app_id)
         if c_queryset:
             c_model = c_queryset[0]
@@ -100,36 +89,27 @@ class AlipayReceiveView(views.APIView):
             if verify_result is True and pay_status == "TRADE_SUCCESS":
                 trade_no = processed_dict.get("trade_no", None)
                 order_no = processed_dict.get("out_trade_no", None)
-                # pay_status = processed_dict.get("trade_status", "")
                 total_amount = processed_dict.get("total_amount", 0)
-                # print('金额', total_amount)
-                # print('支付成功回调跳转后的打印', order_no, '支付宝交易号：', trade_no)
                 exited_order = OrderInfo.objects.filter(order_no=order_no)[0]
                 user_id = exited_order.user_id
                 user_info = UserProfile.objects.filter(id=user_id)[0]
                 if exited_order.pay_status == 'PAYING':
-                    # for exited_order in exited_orders:
                     exited_order.trade_no = trade_no
                     exited_order.pay_status = pay_status
                     exited_order.pay_time = datetime.now()
                     exited_order.save()
                     # 更新用户收款
-                    # from alipay_shop.settings import SERVICE_FEE
                     user_info.total_money += float(total_amount)
                     user_info.save()
                     # 更新商家存钱
-                    # print('商家：----------------------', c_model.name, '成功收款:', total_amount)
                     c_model.total_money += float(total_amount)
                     c_model.last_time = datetime.now()
                     c_model.save()
 
                 '支付状态，下单时间，支付时间，商户订单号'
                 notify_url = user_info.notify_url
-                # print('当前用户的回调接收地址：', notify_url)
                 if not notify_url:
-                    # resp['msg']='notify_url参数为空'
                     return Response('success')
-                # print('notify_url', notify_url)
                 data_dict = {}
                 data_dict['pay_status'] = pay_status
                 data_dict['add_time'] = str(exited_order.add_time)
@@ -145,26 +125,19 @@ class AlipayReceiveView(views.APIView):
                 try:
                     res = requests.post(notify_url, headers=headers, data=r, timeout=5)
                     if res.status_code == 200:
-                        # print('200', res.text)
                         return Response(res.text)
                     else:
-                        # print('订单支付成功了，但通知失败')
                         exited_order.pay_status = 'NOTICE_FAIL'
                         exited_order.save()
                 except requests.exceptions.Timeout:
-                    # print('订单支付成功了，post异常，但通知失败')
                     exited_order.pay_status = 'NOTICE_FAIL'
                     exited_order.save()
                     return Response('')
-                # res = requests.post(notify_url,headers=headers,data=r,timeout=15)
-                # print('res.txt',res.content)
-                # print('头部',res.headers)
         resp = {'msg': '验签失败', 'code': 400, 'data': {}}
         return Response(resp)
 
     def get(self, request):
-        # print(request.data)
-        return Response('22222222')
+        return Response('操作错误')
 
 
 class GetPayView(views.APIView):
@@ -206,7 +179,6 @@ class GetPayView(views.APIView):
         m.update(new_temp.encode('utf-8'))
         my_key = m.hexdigest()
         if my_key == key:
-            # print('get_pay后获取用户信息 用户手机号:', user.mobile)
             c_queryet = BusinessInfo.objects.filter(is_active=True).all()
             if not c_queryet:
                 resp['code'] = 404
@@ -214,7 +186,6 @@ class GetPayView(views.APIView):
                 return Response(resp)
             receive_c = random.choice(c_queryet)
             app_id = receive_c.c_appid
-            # print('随机获取商家收款app_id：', app_id)
             private_key_path = receive_c.c_private_key
             ali_public_path = receive_c.alipay_public_key
             from utils.pay import AliPay
@@ -225,7 +196,6 @@ class GetPayView(views.APIView):
                 app_private_key_path=private_key_path,  # 个人私钥
                 alipay_public_key_path=ali_public_path,  # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
                 debug=ALIPAY_DEBUG,  # 默认False,
-                # return_url="http://120.43.159.62:8000/alipay/return/"
                 return_url=return_url,
                 plat_type=str(plat_type),
             )
@@ -239,9 +209,6 @@ class GetPayView(views.APIView):
                 out_trade_no=order_no,
                 total_amount=total_amount
             )
-            # # 沙箱环境
-            # re_url = "https://openapi.alipaydev.com/gateway.do?{data}".format(data=url)
-            # print('生成的支付链接', re_url)
             order = OrderInfo()
             order.user_id = user.id
             order.order_no = order_no
@@ -251,7 +218,6 @@ class GetPayView(views.APIView):
             order.order_id = order_id
             order.receive_way = receive_way
             order.pay_url = url
-            # order.time_rate = user.service_rate
             order.save()
             resp['msg'] = '创建成功'
             resp['code'] = 200
@@ -283,9 +249,7 @@ class WithDrawViewset(mixins.RetrieveModelMixin, mixins.CreateModelMixin,
 
     def get_queryset(self):
         if self.request.user.is_superuser:
-            # print('当前用户是管理员', self.request.user)
             return WithDrawMoney.objects.all().order_by('-add_time')
-        # print(11111111111111111111, self.request.user)
         user = self.request.user
         if user:
             return WithDrawMoney.objects.filter(user=self.request.user).order_by('-add_time')

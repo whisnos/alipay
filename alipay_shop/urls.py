@@ -38,7 +38,5 @@ urlpatterns = [
     url(r'^', include(route.urls)),
     url(r'^alipay/receive/', AlipayReceiveView.as_view(), name="receive"),
     url(r'^get_pay/', GetPayView.as_view(), name="get_pay"),
-    # 查询订单接口
     url(r'^query_order/', QueryOrderView.as_view(), name="query_order"),
-    # url(r'^index/', TemplateView.as_view(template_name='page1.html'), name="page1"),
 ]

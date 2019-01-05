@@ -8,47 +8,8 @@ from trade.models import OrderInfo, WithDrawMoney
 from utils.make_code import generate_order_no
 
 
-class OrderDetailSerializer(serializers.ModelSerializer):
-    """订单详情序列化器"""
-    # 支付宝url
-    alipay_url = serializers.SerializerMethodField(read_only=True)
-    add_time = serializers.DateTimeField(read_only=True, format='%Y-%m-%d %H:%M')
-    pay_time = serializers.DateTimeField(read_only=True, format='%Y-%m-%d %H:%M')
-
-    # obj OrderSerializer对象
-    def get_alipay_url(self, obj):
-        private_key_path = "keys/app_private_2048.txt"
-        ali_public_path = "keys/alipay.txt"
-        from utils.pay import AliPay
-        alipay = AliPay(
-            appid="2016092100565912",
-            app_notify_url="http://127.0.0.1:8000/alipay/return/",
-            app_private_key_path=private_key_path,
-            alipay_public_key_path=ali_public_path,  # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
-            debug=True,  # 默认False,
-            # 同步接口，支付成功后会跳转的接口
-            return_url="http://127.0.0.1:8000/alipay/return/"
-        )
-        url = alipay.direct_pay(
-            subject=obj.order_no,
-            # 商品id
-            out_trade_no=obj.order_no,
-            # 资金
-            total_amount=obj.total_amount
-        )
-        # 沙箱环境
-        re_url = "https://openapi.alipaydev.com/gateway.do?{data}".format(data=url)
-        # print(re_url)
-        return re_url
-
-    class Meta:
-        model = OrderInfo
-        fields = "__all__"
-
-
 class OrderSerializer(serializers.ModelSerializer):
     """订单序列化器"""
-    # 得到当前用户,在fields里面填写
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     order_no = serializers.CharField(read_only=True)
     trade_no = serializers.CharField(read_only=True)
@@ -99,17 +60,6 @@ class OrderListSerializer(serializers.ModelSerializer):
     pay_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M')
     add_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M')
 
-    # juhe_money = serializers.SerializerMethodField(read_only=True)
-    #
-    # def get_juhe_money(self,obj):
-    #     # print(dir(self.context['request']))
-    #     print('123',(self.context['request'].get_full_path()))
-    #     # print((self.context['request'].GET.keys()))
-    #     # print('456',(self.context['request'].user))
-    #     # for k,v in self.context['request'].GET:
-    #     #     for n in v:
-    #     #         print(n)
-    #     return 'pp'
     class Meta:
         model = OrderInfo
         fields = '__all__'
@@ -172,7 +122,6 @@ class GetPaySerializer(serializers.Serializer):
 
 class WithDrawSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    # withdraw_status = serializers.CharField(read_only=True)
     receive_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M')
     add_time = serializers.DateTimeField(read_only=True, format='%Y-%m-%d %H:%M')
     money = serializers.FloatField(read_only=True)
@@ -183,12 +132,10 @@ class WithDrawSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     withdraw_no = serializers.CharField(read_only=True)
     time_rate = serializers.FloatField(read_only=True)
+
     class Meta:
         model = WithDrawMoney
         fields = "__all__"
-
-
-from django.http.response import HttpResponse
 
 
 class WithDrawCreateSerializer(serializers.ModelSerializer):
@@ -211,11 +158,7 @@ class WithDrawCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context['request'].user
         user_money = user.total_money
-        # print(1)
         money = validated_data['money']
-        # receive_money_info=validated_data['receive_money_info']
-        # print('receive_money_info',receive_money_info)
-        # print('money', money)
         if money <= user_money:
             validated_data['real_money'] = '%.2f' % (money * (1 - user.service_rate))
             with_model = WithDrawMoney.objects.create(**validated_data)
@@ -232,7 +175,7 @@ class WithDrawCreateSerializer(serializers.ModelSerializer):
         model = WithDrawMoney
         fields = '__all__'
 
-
+from django.db.models import Q
 class TotalNumSerializer(serializers.Serializer):
     total = serializers.SerializerMethodField(read_only=True)
 
@@ -242,18 +185,13 @@ class TotalNumSerializer(serializers.Serializer):
         local_time = strftime('%Y-%m-%d %H:%M:%S', localtime())
         min_time = self.context['request'].GET.get('min_time', old_time)
         max_time = self.context['request'].GET.get('max_time', local_time)
-        pay_status = 'TRADE_SUCCESS'
         if not min_time:
-            print(2)
             min_time = old_time
         elif not max_time:
-            print(1)
             max_time = local_time
-        pay_status = pay_status
-        a = OrderInfo.objects.filter(user=user, add_time__gte=min_time, add_time__lte=max_time,
-                                     pay_status__icontains=pay_status).aggregate(Sum('total_amount'))
-        b = OrderInfo.objects.filter(user=user, add_time__gte=min_time, add_time__lte=max_time,
-                                     pay_status__icontains=pay_status).aggregate(Count('id'))
+        a = OrderInfo.objects.filter(Q(pay_status__icontains='TRADE_SUCCESS')|Q(pay_status__icontains='NOTICE_FAIL'),user=user, add_time__gte=min_time, add_time__lte=max_time,
+                                     ).aggregate(Sum('total_amount'))
+        b = OrderInfo.objects.filter(Q(pay_status__icontains='TRADE_SUCCESS')|Q(pay_status__icontains='NOTICE_FAIL'),user=user, add_time__gte=min_time, add_time__lte=max_time).aggregate(Count('id'))
         a.update(b)
         return (a)
 #

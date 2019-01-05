@@ -148,23 +148,14 @@ AUTHENTICATION_BACKENDS = (
 #     'content-type',
 # )
 # APPEND_SLASH=False
+
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-
-        # 'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
     ),
-    # 'DEFAULT_THROTTLE_CLASSES': (
-    #     'rest_framework.throttling.AnonRateThrottle',
-    #     'rest_framework.throttling.UserRateThrottle'
-    # ),
-    # 'DEFAULT_THROTTLE_RATES': {
-    #     'anon': '2/minute',
-    #     'user': '3/minute'
-    # }
 }
 
 # 支付宝配置

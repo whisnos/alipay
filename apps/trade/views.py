@@ -64,7 +64,7 @@ class AlipayReceiveView(views.APIView):
             processed_dict[key] = value
         sign = processed_dict.pop("sign", None)
         app_id = processed_dict.get('app_id', '')
-        print('request.data',request.data)
+        print('request.data', request.data)
         c_queryset = BusinessInfo.objects.filter(c_appid=app_id)
         if c_queryset:
             c_model = c_queryset[0]
@@ -86,7 +86,7 @@ class AlipayReceiveView(views.APIView):
                 resp['code'] = 400
                 return Response(resp)
             pay_status = processed_dict.get("trade_status", "")
-            print('pay_status',pay_status)
+            print('pay_status', pay_status)
             if verify_result is True and pay_status == "TRADE_SUCCESS":
                 trade_no = processed_dict.get("trade_no", None)
                 order_no = processed_dict.get("out_trade_no", None)
@@ -100,7 +100,9 @@ class AlipayReceiveView(views.APIView):
                     exited_order.pay_time = datetime.now()
                     exited_order.save()
                     # 更新用户收款
-                    user_info.total_money += float(total_amount)
+                    user_money = user_info.total_money
+                    cun_money = '%.2f' % (user_money + float(total_amount))
+                    user_info.total_money = cun_money
                     user_info.save()
                     # 更新商家存钱
                     c_model.total_money += float(total_amount)
@@ -124,12 +126,8 @@ class AlipayReceiveView(views.APIView):
                 r = json.dumps(resp)
                 headers = {'Content-Type': 'application/json'}
                 try:
-                    res = requests.post(notify_url, headers=headers, data=r, timeout=5)
-                    if res.status_code == 200:
-                        return Response(res.text)
-                    else:
-                        exited_order.pay_status = 'NOTICE_FAIL'
-                        exited_order.save()
+                    res = requests.post(notify_url, headers=headers, data=r, timeout=5, stream=True)
+                    return Response(res.text)
                 except requests.exceptions.Timeout:
                     exited_order.pay_status = 'NOTICE_FAIL'
                     exited_order.save()

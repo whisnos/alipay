@@ -1,4 +1,5 @@
 # 用的时候使用OrderSerializer和OrderDetailSerializer，
+import re
 import time
 
 from django.db.models import Sum, Count
@@ -136,8 +137,7 @@ class WithDrawSerializer(serializers.ModelSerializer):
     class Meta:
         model = WithDrawMoney
         fields = "__all__"
-
-
+from rest_framework.response import Response
 class WithDrawCreateSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     withdraw_status = serializers.CharField(read_only=True)
@@ -151,8 +151,16 @@ class WithDrawCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         user = self.context['request'].user
         user_money = user.total_money
+        print('555',attrs['money'])
+        patt = re.match(r'(^[1-9]([0-9]{1,4})?(\.[0-9]{1,2})?$)|(^(0){1}$)|(^[0-9]\.[0-9]([0-9])?$)', str(attrs['money']))
+        try:
+            print('2')
+            patt.group()
+        except:
+            raise serializers.ValidationError('金额输入异常')
         if attrs['money'] > user_money or attrs['money'] == 0:
-            raise serializers.ValidationError('金额异常')
+            raise serializers.ValidationError('金额输入异常')
+
         return attrs
 
     def create(self, validated_data):

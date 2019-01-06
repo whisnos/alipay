@@ -64,6 +64,7 @@ class AlipayReceiveView(views.APIView):
             processed_dict[key] = value
         sign = processed_dict.pop("sign", None)
         app_id = processed_dict.get('app_id', '')
+        print('request.data',request.data)
         c_queryset = BusinessInfo.objects.filter(c_appid=app_id)
         if c_queryset:
             c_model = c_queryset[0]
@@ -85,7 +86,7 @@ class AlipayReceiveView(views.APIView):
                 resp['code'] = 400
                 return Response(resp)
             pay_status = processed_dict.get("trade_status", "")
-
+            print('pay_status',pay_status)
             if verify_result is True and pay_status == "TRADE_SUCCESS":
                 trade_no = processed_dict.get("trade_no", None)
                 order_no = processed_dict.get("out_trade_no", None)

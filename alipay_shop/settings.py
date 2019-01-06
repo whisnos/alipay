@@ -161,4 +161,4 @@ REST_FRAMEWORK = {
 # 支付宝配置
 ALIPAY_DEBUG = True
 APP_NOTIFY_URL = "http://117.31.81.96:8000/alipay/receive/"
-# APP_NOTIFY_URL = "http://pay.irhau.cn/alipay/receive/"
+# APP_NOTIFY_URL = "https://pay.irhau.cn/alipay/receive/"

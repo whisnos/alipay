@@ -100,9 +100,7 @@ class AlipayReceiveView(views.APIView):
                     exited_order.pay_time = datetime.now()
                     exited_order.save()
                     # 更新用户收款
-                    user_money = user_info.total_money
-                    cun_money = '%.2f' % (user_money + float(total_amount))
-                    user_info.total_money = cun_money
+                    user_info.total_money = '%.2f' % (user_info.total_money + float(total_amount))
                     user_info.save()
                     # 更新商家存钱
                     c_model.total_money += float(total_amount)

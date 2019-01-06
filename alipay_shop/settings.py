@@ -157,8 +157,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
 }
-
+re='re'
 # 支付宝配置
-ALIPAY_DEBUG = True
+a='re'
+ALIPAY_DEBUG = False
 # APP_NOTIFY_URL = "http://117.31.81.96:8000/alipay/receive/"
 APP_NOTIFY_URL = "https://pay.irhau.cn/alipay/receive/"

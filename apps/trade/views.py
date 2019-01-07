@@ -103,7 +103,7 @@ class AlipayReceiveView(views.APIView):
                     user_info.total_money = '%.2f' % (user_info.total_money + float(total_amount))
                     user_info.save()
                     # 更新商家存钱
-                    c_model.total_money += float(total_amount)
+                    c_model.total_money = '%.2f' % (c_model.total_money + float(total_amount))
                     c_model.last_time = datetime.now()
                     c_model.save()
 

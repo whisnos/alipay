@@ -174,3 +174,13 @@ class QueryOrderView(views.APIView):
                 resp['pay_time'] = order.pay_time
                 return Response(resp)
         return Response(resp)
+
+def redirect_url(request):
+    pay_url=request.get_full_path()
+    url_list=pay_url.split('/redirect_url/?id=')
+    pay_url=url_list[1]
+    print(111111111111,pay_url)
+    if pay_url:
+        return render(request,'redi.html',{
+            "pay_url":pay_url
+        })

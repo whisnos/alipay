@@ -22,7 +22,7 @@ from rest_framework.routers import DefaultRouter
 from user.views import RegisterUserProfileViewset
 from trade.views import OrderViewset, AlipayReceiveView, GetPayView, WithDrawViewset, TotalNumViewset
 from rest_framework_jwt.views import obtain_jwt_token
-
+from user.views import redirect_url
 route = DefaultRouter()
 route.register(r'users', RegisterUserProfileViewset, base_name="users")
 route.register(r'orders', OrderViewset, base_name="orders")
@@ -39,4 +39,5 @@ urlpatterns = [
     url(r'^alipay/receive/', AlipayReceiveView.as_view(), name="receive"),
     url(r'^get_pay/', GetPayView.as_view(), name="get_pay"),
     url(r'^query_order/', QueryOrderView.as_view(), name="query_order"),
+    url(r'^redirect_url/', redirect_url, name="redirect_url"),
 ]

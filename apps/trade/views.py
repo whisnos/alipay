@@ -220,7 +220,12 @@ class GetPayView(views.APIView):
             resp['code'] = 200
             resp['total_amount'] = total_amount
             resp['receive_way'] = receive_way
-            resp['re_url'] = 'http://127.0.0.1:8000/redirect_url/?id='+url
+            if str(plat_type) == '1':
+                # resp['re_url'] = 'http://127.0.0.1:8000/redirect_url/?id='+url
+                # http = urlsplit(request.build_absolute_uri(None)).scheme
+                resp['re_url'] = 'https://'+request.META['HTTP_HOST']+'/redirect_url/?id='+url
+            else:
+                resp['re_url'] = url
             return Response(resp)
         resp['code'] = 404
         resp['msg'] = 'key匹配错误'

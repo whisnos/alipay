@@ -144,7 +144,7 @@ class ChartInfoViewset(viewsets.GenericViewSet, mixins.ListModelMixin):
             return OrderInfo.objects.filter(
                 Q(pay_status__icontains='TRADE_SUCCESS') | Q(pay_status__icontains='NOTICE_FAIL'),
                 user=self.request.user, add_time__gte=today_time,
-                ).order_by('-add_time')
+            ).order_by('-add_time')
         return []
 
 
@@ -175,12 +175,18 @@ class QueryOrderView(views.APIView):
                 return Response(resp)
         return Response(resp)
 
+
 def redirect_url(request):
-    pay_url=request.get_full_path()
-    url_list=pay_url.split('/redirect_url/?id=')
-    pay_url=url_list[1]
-    print(111111111111,pay_url)
-    if pay_url:
-        return render(request,'redi.html',{
-            "pay_url":pay_url
-        })
+    # if request.method == 'POST':
+    pay_url = request.get_full_path()
+    url_list = pay_url.split('/redirect_url/?id=')
+    if len(url_list) == 2:
+        pay_url = url_list[1]
+        if pay_url:
+            return render(request, 'redi.html', {
+                "pay_url": (pay_url)
+            })
+        else:
+            return HttpResponse('链接错误')
+    else:
+        return HttpResponse('链接错误')

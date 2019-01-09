@@ -32,7 +32,9 @@ class AliPay(object):
         elif self.plat_type == '1':
             self.product_code = "QUICK_WAP_PAY"
             self.pay_way = "alipay.trade.wap.pay"
-
+        else:
+            self.product_code = "FAST_INSTANT_TRADE_PAY"
+            self.pay_way = "alipay.trade.page.pay"
 
         if debug is True:
             self.__gateway = "https://openapi.alipaydev.com/gateway.do"
@@ -51,9 +53,9 @@ class AliPay(object):
 
         biz_content.update(kwargs)
         data = self.build_body(self.pay_way, biz_content, self.return_url)  # alipay.trade.wap.pay
-        url=self.sign_data(data)
+        url = self.sign_data(data)
         # 沙箱环境
-        re_url = self.__gateway+"?{data}".format(data=url)
+        re_url = self.__gateway + "?{data}".format(data=url)
         return re_url
 
     def build_body(self, method, biz_content, return_url=None):

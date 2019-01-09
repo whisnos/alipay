@@ -64,7 +64,6 @@ class AlipayReceiveView(views.APIView):
             processed_dict[key] = value
         sign = processed_dict.pop("sign", None)
         app_id = processed_dict.get('app_id', '')
-        print('request.data', request.data)
         c_queryset = BusinessInfo.objects.filter(c_appid=app_id)
         if c_queryset:
             c_model = c_queryset[0]

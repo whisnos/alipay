@@ -48,6 +48,7 @@ class AliPay(object):
             "out_trade_no": out_trade_no,
             "total_amount": total_amount,
             "product_code": self.product_code,  # QUICK_WAP_PAY
+            "disable_pay_channels":'creditCard,pcredit,creditCardExpress'
             # "qr_pay_mode":4
         }
 

@@ -136,6 +136,30 @@ class AlipayReceiveView(views.APIView):
         return Response('操作错误')
 
 
+class WxpayReceiveView(views.APIView):
+    def post(self, request):
+        print('11111111')
+        # processed_dict = {}
+        # for key, value in request.data.items():
+        #     processed_dict[key] = value
+        # resp = {'msg': '验签失败', 'code': 400, 'data': {}}
+
+        from pywxpay import WXPayUtil
+        wxpayutil = WXPayUtil()
+        print('request.body', request.body)
+        result = wxpayutil.xml2dict(request.body)
+        print('result', result)
+
+        verify = wxpayutil.is_signature_valid(result, '4b2ee361b2c7b000d244ca3e60c29f62')
+        if verify:
+            pass
+        print('verify', verify)
+        return Response('success')
+
+    def get(self, request):
+        return Response('操作错误')
+
+
 class GetPayView(views.APIView):
     def post(self, request):
         processed_dict = {}
@@ -180,54 +204,97 @@ class GetPayView(views.APIView):
                 resp['code'] = 404
                 resp['msg'] = '收款商户未激活'
                 return Response(resp)
-            receive_c = random.choice(c_queryet)
-            app_id = receive_c.c_appid
-            private_key_path = receive_c.c_private_key
-            ali_public_path = receive_c.alipay_public_key
-            from utils.pay import AliPay
-            from alipay_shop.settings import APP_NOTIFY_URL
-            alipay = AliPay(
-                appid=app_id,
-                app_notify_url=APP_NOTIFY_URL,
-                app_private_key_path=private_key_path,  # 个人私钥
-                alipay_public_key_path=ali_public_path,  # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
-                debug=ALIPAY_DEBUG,  # 默认False,
-                return_url=return_url,
-                plat_type=str(plat_type),
-            )
+
             import time
             from utils.make_code import make_short_code
             short_code = make_short_code(8)
             order_no = "{time_str}{userid}{randstr}".format(time_str=time.strftime("%Y%m%d%H%M%S"),
                                                             userid=user.id, randstr=short_code)
-            url = alipay.direct_pay(
-                subject=order_no,
-                out_trade_no=order_no,
-                total_amount=total_amount
-            )
-            order = OrderInfo()
-            order.user_id = user.id
-            order.order_no = order_no
-            order.pay_status = 'PAYING'
-            order.total_amount = total_amount
-            order.user_msg = user_msg
-            order.order_id = order_id
-            order.receive_way = receive_way
-            order.pay_url = url
-            order.save()
-            resp['msg'] = '创建成功'
-            resp['code'] = 200
-            resp['total_amount'] = total_amount
-            resp['receive_way'] = receive_way
-            if str(plat_type) == '1':
-                # resp['re_url'] = 'http://127.0.0.1:8000/redirect_url/?id='+url
-                # http = urlsplit(request.build_absolute_uri(None)).scheme
-                resp['re_url'] = 'https://'+request.META['HTTP_HOST']+'/redirect_url/?id='+url
-            else:
+            if receive_way == 'ALIPAY':
+                receive_c = random.choice(c_queryet)
+                app_id = receive_c.c_appid
+                private_key_path = receive_c.c_private_key
+                ali_public_path = receive_c.alipay_public_key
+                from utils.pay import AliPay
+                from alipay_shop.settings import APP_NOTIFY_URL
+                alipay = AliPay(
+                    appid=app_id,
+                    app_notify_url=APP_NOTIFY_URL,
+                    app_private_key_path=private_key_path,  # 个人私钥
+                    alipay_public_key_path=ali_public_path,  # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
+                    debug=ALIPAY_DEBUG,  # 默认False,
+                    return_url=return_url,
+                    plat_type=str(plat_type),
+                )
+                url = alipay.direct_pay(
+                    subject=order_no,
+                    out_trade_no=order_no,
+                    total_amount=total_amount
+                )
+                order = OrderInfo()
+                order.user_id = user.id
+                order.order_no = order_no
+                order.pay_status = 'PAYING'
+                order.total_amount = total_amount
+                order.user_msg = user_msg
+                order.order_id = order_id
+                order.receive_way = receive_way
+                order.pay_url = url
+                order.save()
+                resp['msg'] = '创建成功'
+                resp['code'] = 200
+                resp['total_amount'] = total_amount
+                resp['receive_way'] = receive_way
+                if str(plat_type) == '1':
+                    # resp['re_url'] = 'http://127.0.0.1:8000/redirect_url/?id='+url
+                    # http = urlsplit(request.build_absolute_uri(None)).scheme
+                    resp['re_url'] = 'https://' + request.META['HTTP_HOST'] + '/redirect_url/?id=' + url
+                else:
+                    resp['re_url'] = url
+                return Response(resp)
+
+            elif receive_way == 'WECHAT':
+                from pywxpay import WXPay
+                wxpay = WXPay(app_id='wx1b0782ff589aa9a6',
+                              mch_id='1489970272',
+                              key='4b2ee361b2c7b000d244ca3e60c29f62',
+                              cert_pem_path=None,
+                              key_pem_path=None,
+                              timeout=600.0)
+                from decimal import Decimal
+                print('total_amount',total_amount)
+                d = Decimal(total_amount)
+                print('d',d)
+                wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB',
+                                                          body=order_no,
+                                                          detail='',
+                                                          out_trade_no=order_no,
+                                                          total_fee=int(d*100),
+                                                          fee_type='CNY',
+                                                          notify_url='http://120.34.182.49:8000/wxpay/receive/',
+                                                          spbill_create_ip='123.12.12.123',
+                                                          trade_type='NATIVE')
+                                                     )
+                print('wxpay_resp_dict',wxpay_resp_dict)
+                url=wxpay_resp_dict.get('code_url','')
+                order = OrderInfo()
+                order.user_id = user.id
+                order.order_no = order_no
+                order.pay_status = 'PAYING'
+                order.total_amount = total_amount
+                order.user_msg = user_msg
+                order.order_id = order_id
+                order.receive_way = receive_way
+                order.pay_url = url
+                order.save()
+                resp['msg'] = '创建成功'
+                resp['code'] = 200
+                resp['total_amount'] = total_amount
+                resp['receive_way'] = receive_way
                 resp['re_url'] = url
-            return Response(resp)
-        resp['code'] = 404
-        resp['msg'] = 'key匹配错误'
+                return Response(resp)
+            resp['code'] = 404
+            resp['msg'] = 'key匹配错误'
         return Response(resp)
 
 

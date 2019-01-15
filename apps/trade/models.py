@@ -63,8 +63,8 @@ class WithDrawMoney(models.Model):
     freeze_money = models.FloatField(default=0.0, verbose_name='冻结金额')
     default_flag = models.BooleanField(default=False, verbose_name='旗帜')
     time_rate = models.FloatField(null=True, blank=True, verbose_name='当时费率')
-    open_bank = models.CharField(max_length=50, null=True, blank=True,verbose_name='开户行')
-    receive_money_info = models.CharField(max_length=200,null=True,blank=True,verbose_name='收款信息')
+    open_bank = models.CharField(max_length=50, null=True, blank=True, verbose_name='开户行')
+    receive_money_info = models.CharField(max_length=200, null=True, blank=True, verbose_name='收款信息')
 
     def __str__(self):
         return self.user.username
@@ -97,5 +97,23 @@ class BusinessInfo(models.Model):
         return self.name
 
     class Meta:
-        verbose_name = '商家管理'
+        verbose_name = '支付宝管理'
+        verbose_name_plural = verbose_name
+
+
+class WXBusinessInfo(models.Model):
+    name = models.CharField(max_length=50, verbose_name='收款公司名称')
+    wx_mchid = models.CharField(max_length=32,verbose_name='商户号')
+    wx_appid = models.CharField(max_length=32, verbose_name='微信商家appid')
+    wxapi_key = models.TextField(verbose_name='微信key')
+    add_time = models.DateTimeField(default=datetime.now, verbose_name='创建时间')
+    is_active = models.BooleanField(default=True, verbose_name='是否激活状态')
+    last_time = models.DateTimeField(null=True, blank=True, verbose_name='最后收款时间')
+    total_money = models.FloatField(default=0.0, verbose_name='总收款')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = '微信管理'
         verbose_name_plural = verbose_name

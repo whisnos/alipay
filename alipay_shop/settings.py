@@ -163,5 +163,6 @@ REST_FRAMEWORK = {
 # 支付宝配置
 ALIPAY_DEBUG = True
 APP_NOTIFY_URL = "http://120.34.182.49:8000/alipay/receive/"
+WX_NOTIFY_URL = "http://120.34.182.49:8000/wxpay/receive/"
 # APP_NOTIFY_URL = "https://pay.irhau.cn/alipay/receive/"
 APPEND_SLASH=False

@@ -1,4 +1,4 @@
-from .models import OrderInfo, WithDrawMoney, BusinessInfo
+from .models import OrderInfo, WithDrawMoney, BusinessInfo, WXBusinessInfo
 import xadmin
 
 
@@ -16,7 +16,7 @@ class OrderInfoAdmin(object):
     model_icon = 'fa fa-th-list'
 
     # 只读字段
-    readonly_fields = ['user','pay_time', 'add_time', 'total_amount', 'order_no', 'trade_no',
+    readonly_fields = ['user', 'pay_time', 'add_time', 'total_amount', 'order_no', 'trade_no',
                        'receive_way', 'order_id', 'pay_url']
     # 每页显示几条
     # list_per_page = 10
@@ -29,7 +29,8 @@ class OrderInfoAdmin(object):
 
 
 class WithDraoMoneyAdmin(object):
-    list_display = ['withdraw_no', 'money', 'real_money', 'user', 'receive_way', 'receive_money_info', 'withdraw_status']
+    list_display = ['withdraw_no', 'money', 'real_money', 'user', 'receive_way', 'receive_money_info',
+                    'withdraw_status']
     list_filter = ['withdraw_no', 'user', 'add_time', 'receive_time']
     model_icon = 'fa fa-jpy'
 
@@ -48,6 +49,13 @@ class BusinessInfoAdmin(object):
     readonly_fields = ['total_money']
 
 
+class WXBusinessInfoAdmin(object):
+    list_display = ['name', 'wx_appid', 'add_time', 'last_time', 'is_active', 'total_money']
+    list_filter = ['name', 'wx_appid', 'is_active']
+    readonly_fields = ['total_money']
+
+
 xadmin.site.register(OrderInfo, OrderInfoAdmin)
 xadmin.site.register(WithDrawMoney, WithDraoMoneyAdmin)
 xadmin.site.register(BusinessInfo, BusinessInfoAdmin)
+xadmin.site.register(WXBusinessInfo, WXBusinessInfoAdmin)

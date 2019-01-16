@@ -144,12 +144,12 @@ class WxpayReceiveView(views.APIView):
         print('request.body', request.body)
         result = wxpayutil.xml2dict(request.body)
         print('result', result)
-
         verify = wxpayutil.is_signature_valid(result, '4b2ee361b2c7b000d244ca3e60c29f62')
-        if verify:
-            pass
         print('verify', verify)
-        return Response('success')
+        if verify:
+            print('支付成功！')
+            return Response('success')
+        return Response('fail')
 
     def get(self, request):
         return Response('操作错误')
@@ -261,9 +261,9 @@ class GetPayView(views.APIView):
                 wx_mchid = receive_c.wx_mchid
                 wxapi_key = receive_c.wxapi_key
                 from pywxpay import WXPay
-
-                wxpay = WXPay(app_id=wx_appid, mch_id=wx_mchid, key='96537e694e4b1ce3e2bfb6cbd3cac3aa', cert_pem_path=None, key_pem_path=None,
-                              timeout=600.0,use_sandbox=True)
+                # 96537e694e4b1ce3e2bfb6cbd3cac3aa
+                wxpay = WXPay(app_id=wx_appid, mch_id=wx_mchid, key=wxapi_key, cert_pem_path=None, key_pem_path=None,
+                              timeout=600.0,use_sandbox=False)
                 from decimal import Decimal
                 from alipay_shop.settings import WX_NOTIFY_URL
                 trade_type = 'NATIVE'

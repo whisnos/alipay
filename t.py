@@ -8,7 +8,7 @@ a = '7cf0531c10d711e98efed8cb8a770be3V9aBrYxo9AeSyBJmsH6NkG28ZzaRmFNp0.01WECHATh
 m = hashlib.md5()
 m.update(a.encode("utf-8"))
 sign = m.hexdigest()
-print(sign)
+# print(sign)
 
 user_money = 5.53
 cun_money = '%.2f' % (user_money + float(2.1))
@@ -37,8 +37,8 @@ wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB',
 # print(wxpay_resp_dict)
 from decimal import Decimal
 
-total_amount = '0.01'
-# print(int(Decimal(total_amount)*100))
+total_amount = '1099'
+print((int(total_amount)*0.01))
 # print('ype(total_amount)', type(total_amount))
 # if (type(total_amount) == str):
 #     num = int(int(total_amount) * 100)

@@ -190,3 +190,8 @@ def redirect_url(request):
             return HttpResponse('链接错误')
     else:
         return HttpResponse('链接错误')
+
+def receive_post(request):
+    # if request.method=='POST':
+    print('接收到post')
+    return HttpResponse('success')

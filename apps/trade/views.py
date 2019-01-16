@@ -20,7 +20,9 @@ from utils.permissions import IsOwnerOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 from alipay_shop.settings import ALIPAY_DEBUG
-
+from decimal import Decimal
+from django.http import StreamingHttpResponse
+from pywxpay import WXPayUtil
 
 class OrderListPagination(PageNumberPagination):
     page_size = 10
@@ -120,7 +122,6 @@ class AlipayReceiveView(views.APIView):
                 data_dict['order_no'] = exited_order.order_no
                 data_dict['user_msg'] = exited_order.user_msg
                 resp['data'] = data_dict
-                import json
                 r = json.dumps(resp)
                 headers = {'Content-Type': 'application/json'}
                 try:
@@ -139,16 +140,79 @@ class AlipayReceiveView(views.APIView):
 
 class WxpayReceiveView(views.APIView):
     def post(self, request):
-        from pywxpay import WXPayUtil
+        resp = {'msg': '操作成功', 'code': 200, 'data': []}
         wxpayutil = WXPayUtil()
-        print('request.body', request.body)
         result = wxpayutil.xml2dict(request.body)
         print('result', result)
         verify = wxpayutil.is_signature_valid(result, '4b2ee361b2c7b000d244ca3e60c29f62')
-        print('verify', verify)
-        if verify:
-            print('支付成功！')
-            return Response('success')
+        pay_status = result.get("result_code", "")
+        app_id = result.get('appid', '')
+        c_queryset = WXBusinessInfo.objects.filter(wx_appid=app_id)
+        if c_queryset:
+            c_model = c_queryset[0]
+            if verify and pay_status == "SUCCESS":
+                print('支付成功！')
+                trade_no = result.get("transaction_id", None)
+                order_no = result.get("out_trade_no", None)
+                print('order_no',order_no)
+                total_amount = result.get("total_fee", 0)
+                exited_orderqueryset = OrderInfo.objects.filter(order_no=order_no)
+                if not exited_orderqueryset:
+                    resp['msg']='订单不存在'
+                    return Response('fail')
+                exited_order=exited_orderqueryset[0]
+                user_id = exited_order.user_id
+                user_info = UserProfile.objects.filter(id=user_id)[0]
+                if exited_order.pay_status == 'PAYING':
+                    exited_order.trade_no = trade_no
+                    exited_order.pay_status = pay_status
+                    exited_order.pay_time = datetime.now()
+                    exited_order.save()
+
+                    # 更新用户收款
+                    user_info.total_money = '%.2f' % (user_info.total_money + (int(total_amount) * 0.01))
+                    user_info.save()
+                    # 更新商家存钱
+                    c_model.total_money = '%.2f' % (c_model.total_money + (int(total_amount) * 0.01))
+                    c_model.last_time = datetime.now()
+                    c_model.save()
+
+                '支付状态，下单时间，支付时间，商户订单号'
+                notify_url = user_info.notify_url
+                if not notify_url:
+                    return Response('success')
+                data_dict = {}
+                data_dict['pay_status'] = pay_status
+                data_dict['add_time'] = str(exited_order.add_time)
+                data_dict['pay_time'] = str(exited_order.pay_time)
+                data_dict['total_amount'] = total_amount
+                data_dict['order_id'] = exited_order.order_id
+                data_dict['order_no'] = exited_order.order_no
+                data_dict['user_msg'] = exited_order.user_msg
+                resp['data'] = data_dict
+                r = json.dumps(resp)
+                headers = {'Content-Type': 'application/json'}
+                try:
+                    print('开始给用户post',notify_url)
+                    res = requests.post(notify_url, headers=headers, data=r, timeout=5, stream=True)
+                    # return Response(res.text)
+                    print('res.text', res.text)
+                    if res.text == 'success':
+                        # headers = {'Content-Type': 'text/xml'}
+                        print('res.text',res.text)
+                        data='''
+                        <xml>
+                          <return_code><![CDATA[SUCCESS]]></return_code>
+                          <return_msg><![CDATA[OK]]></return_msg>
+                        </xml>
+                        '''
+                        return StreamingHttpResponse(data)
+
+                except requests.exceptions.Timeout:
+                    print('给用户post异常')
+                    exited_order.pay_status = 'NOTICE_FAIL'
+                    exited_order.save()
+                    return Response('')
         return Response('fail')
 
     def get(self, request):
@@ -157,7 +221,6 @@ class WxpayReceiveView(views.APIView):
 
 class GetPayView(views.APIView):
     def post(self, request):
-
         processed_dict = {}
         resp = {'msg': '操作成功'}
         for key, value in request.data.items():
@@ -226,20 +289,6 @@ class GetPayView(views.APIView):
                     out_trade_no=order_no,
                     total_amount=total_amount
                 )
-                # order = OrderInfo()
-                # order.user_id = user.id
-                # order.order_no = order_no
-                # order.pay_status = 'PAYING'
-                # order.total_amount = total_amount
-                # order.user_msg = user_msg
-                # order.order_id = order_id
-                # order.receive_way = receive_way
-                # order.pay_url = url
-                # order.save()
-                # resp['msg'] = '创建成功'
-                # resp['code'] = 200
-                # resp['total_amount'] = total_amount
-                # resp['receive_way'] = receive_way
                 if str(plat_type) == '1':
                     # resp['re_url'] = 'http://127.0.0.1:8000/redirect_url/?id='+url
                     # http = urlsplit(request.build_absolute_uri(None)).scheme
@@ -263,8 +312,8 @@ class GetPayView(views.APIView):
                 from pywxpay import WXPay
                 # 96537e694e4b1ce3e2bfb6cbd3cac3aa
                 wxpay = WXPay(app_id=wx_appid, mch_id=wx_mchid, key=wxapi_key, cert_pem_path=None, key_pem_path=None,
-                              timeout=600.0,use_sandbox=False)
-                from decimal import Decimal
+                              timeout=600.0, use_sandbox=False)
+
                 from alipay_shop.settings import WX_NOTIFY_URL
                 trade_type = 'NATIVE'
                 scene_info = False
@@ -283,15 +332,6 @@ class GetPayView(views.APIView):
 
                 print('wxpay_resp_dict', wxpay_resp_dict)
                 url = wxpay_resp_dict.get('code_url', '')
-
-                # sign = wxpay_resp_dict.get('sign', '')
-                # nonce_str = wxpay_resp_dict.get('nonce_str', '')
-                # res={}
-                # res['mch_id']=wx_mchid
-                # res['sign']=sign
-                # res['nonce_str']=nonce_str
-                # r=json.dumps(res)
-                # requests.post('https://api.mch.weixin.qq.com/sandboxnew/pay/getsignkey',data=r)
                 if str(plat_type) == '0':
                     url = url + '&redirect_url=' + user.notify_url
                 resp['re_url'] = url
@@ -299,6 +339,7 @@ class GetPayView(views.APIView):
                 resp['code'] = 404
                 resp['msg'] = '该渠道未开通'
                 return Response(resp)
+
             order = OrderInfo()
             order.user_id = user.id
             order.order_no = order_no

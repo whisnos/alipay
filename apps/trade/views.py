@@ -1,28 +1,28 @@
-import json
-import re, random
+import re, random, hashlib, time,json
 from datetime import datetime
 import requests
 
 # Create your views here.
-from rest_framework import mixins, viewsets, serializers, views, status
+from rest_framework import mixins, viewsets, views
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
-
+from utils.make_code import make_short_code
 from .filters import OrdersFilter, WithDrawFilter
 from user.models import UserProfile
 from trade.models import OrderInfo, WithDrawMoney, BusinessInfo, WXBusinessInfo
-from trade.serializers import OrderSerializer, OrderListSerializer, \
-    GetPaySerializer, WithDrawSerializer, WithDrawCreateSerializer, TotalNumSerializer
-from utils.pay import AliPay
+from trade.serializers import OrderSerializer, OrderListSerializer, WithDrawSerializer, WithDrawCreateSerializer, \
+    TotalNumSerializer
 from utils.permissions import IsOwnerOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
-from alipay_shop.settings import ALIPAY_DEBUG
 from decimal import Decimal
 from django.http import StreamingHttpResponse
-from pywxpay import WXPayUtil
+from pywxpay import WXPayUtil,WXPay
+from utils.pay import AliPay
+from alipay_shop.settings import ALIPAY_DEBUG,APP_NOTIFY_URL, WX_NOTIFY_URL
+
 
 class OrderListPagination(PageNumberPagination):
     page_size = 10
@@ -141,10 +141,9 @@ class AlipayReceiveView(views.APIView):
 class WxpayReceiveView(views.APIView):
     def post(self, request):
         resp = {'msg': '操作成功', 'code': 200, 'data': []}
-        wxpayutil = WXPayUtil()
-        result = wxpayutil.xml2dict(request.body)
+        result = WXPayUtil().xml2dict(request.body)
         print('result', result)
-        verify = wxpayutil.is_signature_valid(result, '4b2ee361b2c7b000d244ca3e60c29f62')
+        verify = WXPayUtil().is_signature_valid(result, '4b2ee361b2c7b000d244ca3e60c29f62')
         pay_status = result.get("result_code", "")
         app_id = result.get('appid', '')
         c_queryset = WXBusinessInfo.objects.filter(wx_appid=app_id)
@@ -154,13 +153,13 @@ class WxpayReceiveView(views.APIView):
                 print('支付成功！')
                 trade_no = result.get("transaction_id", None)
                 order_no = result.get("out_trade_no", None)
-                print('order_no',order_no)
+                print('order_no', order_no)
                 total_amount = result.get("total_fee", 0)
                 exited_orderqueryset = OrderInfo.objects.filter(order_no=order_no)
                 if not exited_orderqueryset:
-                    resp['msg']='订单不存在'
+                    resp['msg'] = '订单不存在'
                     return Response('fail')
-                exited_order=exited_orderqueryset[0]
+                exited_order = exited_orderqueryset[0]
                 user_id = exited_order.user_id
                 user_info = UserProfile.objects.filter(id=user_id)[0]
                 if exited_order.pay_status == 'PAYING':
@@ -193,14 +192,14 @@ class WxpayReceiveView(views.APIView):
                 r = json.dumps(resp)
                 headers = {'Content-Type': 'application/json'}
                 try:
-                    print('开始给用户post',notify_url)
+                    print('开始给用户post', notify_url)
                     res = requests.post(notify_url, headers=headers, data=r, timeout=5, stream=True)
                     # return Response(res.text)
                     print('res.text', res.text)
                     if res.text == 'success':
                         # headers = {'Content-Type': 'text/xml'}
-                        print('res.text',res.text)
-                        data='''
+                        print('res.text', res.text)
+                        data = '''
                         <xml>
                           <return_code><![CDATA[SUCCESS]]></return_code>
                           <return_msg><![CDATA[OK]]></return_msg>
@@ -253,13 +252,10 @@ class GetPayView(views.APIView):
         # 加密 uid+auth_code+total_amount+receive_way+return_url+order_id
         auth_code = user.auth_code
         new_temp = str(uid + auth_code + total_amount + receive_way + return_url + order_id)
-        import hashlib
         m = hashlib.md5()
         m.update(new_temp.encode('utf-8'))
         my_key = m.hexdigest()
         if my_key == key:
-            import time
-            from utils.make_code import make_short_code
             short_code = make_short_code(8)
             order_no = "{time_str}{userid}{randstr}".format(time_str=time.strftime("%Y%m%d%H%M%S"),
                                                             userid=user.id, randstr=short_code)
@@ -273,8 +269,6 @@ class GetPayView(views.APIView):
                 app_id = receive_c.c_appid
                 private_key_path = receive_c.c_private_key
                 ali_public_path = receive_c.alipay_public_key
-                from utils.pay import AliPay
-                from alipay_shop.settings import APP_NOTIFY_URL
                 alipay = AliPay(
                     appid=app_id,
                     app_notify_url=APP_NOTIFY_URL,
@@ -309,12 +303,10 @@ class GetPayView(views.APIView):
                 wx_appid = receive_c.wx_appid
                 wx_mchid = receive_c.wx_mchid
                 wxapi_key = receive_c.wxapi_key
-                from pywxpay import WXPay
                 # 96537e694e4b1ce3e2bfb6cbd3cac3aa
                 wxpay = WXPay(app_id=wx_appid, mch_id=wx_mchid, key=wxapi_key, cert_pem_path=None, key_pem_path=None,
                               timeout=600.0, use_sandbox=False)
 
-                from alipay_shop.settings import WX_NOTIFY_URL
                 trade_type = 'NATIVE'
                 scene_info = False
                 if str(plat_type) == '1':

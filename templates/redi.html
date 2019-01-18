@@ -12,6 +12,7 @@
 </div>
 <div class="btn">
     <form action="{{ pay_url }}" id="url_name" method="post">
+        {% csrf_token %}
         <button class="button" type="submit">打开支付宝</button>
     </form>
 

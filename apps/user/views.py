@@ -2,6 +2,7 @@ from django.db.models import Q
 from django.shortcuts import render, redirect, HttpResponse
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -191,7 +192,14 @@ def redirect_url(request):
     else:
         return HttpResponse('链接错误')
 
+@csrf_exempt
 def receive_post(request):
     # if request.method=='POST':
     print('接收到post')
     return HttpResponse('success')
+
+def make_pay(request):
+    if request.method=='POST':
+        print('接收到post')
+        return HttpResponse('success')
+    return render(request,'make_pay.html')

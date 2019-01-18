@@ -47,7 +47,7 @@ class BusinessInfoAdmin(object):
     list_display = ['name', 'c_appid', 'add_time', 'last_time', 'is_active', 'total_money']
     list_filter = ['name', 'c_appid', 'is_active']
     readonly_fields = ['total_money']
-
+    # model_icon = 'fa fa-gavel'
 
 class WXBusinessInfoAdmin(object):
     list_display = ['name', 'wx_appid', 'add_time', 'last_time', 'is_active', 'total_money']

@@ -1,7 +1,7 @@
 import re, random, hashlib, time,json
 from datetime import datetime
 import requests
-
+from django.shortcuts import render, redirect
 # Create your views here.
 from rest_framework import mixins, viewsets, views
 from rest_framework.authentication import SessionAuthentication
@@ -167,7 +167,6 @@ class WxpayReceiveView(views.APIView):
                     exited_order.pay_status = pay_status
                     exited_order.pay_time = datetime.now()
                     exited_order.save()
-
                     # 更新用户收款
                     user_info.total_money = '%.2f' % (user_info.total_money + (int(total_amount) * 0.01))
                     user_info.save()
@@ -293,7 +292,8 @@ class GetPayView(views.APIView):
                 # return Response(resp)
 
             elif receive_way == 'WECHAT':
-                user_ip = request.META.get('REMOTE_ADDR', '')
+                # user_ip = request.META.get('REMOTE_ADDR', '')
+                user_ip = '120.34.182.49'
                 c_queryet = WXBusinessInfo.objects.filter(is_active=True).all()
                 if not c_queryet:
                     resp['code'] = 404
@@ -311,7 +311,7 @@ class GetPayView(views.APIView):
                 scene_info = False
                 if str(plat_type) == '1':
                     trade_type = 'MWEB'
-                    scene_info = '{"h5_info": {"type":"Wap","wap_url": "https://pay.qq.com","wap_name": "腾讯充值"}}'
+                    scene_info = '{"h5_info": {"type":"Wap","wap_url": "http://zymyun.com/","wap_name": "章鱼猫"}}'
                 wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB', body=order_no, detail='',
                                                           out_trade_no=order_no,
                                                           total_fee=int(Decimal(total_amount) * 100),
@@ -324,6 +324,12 @@ class GetPayView(views.APIView):
 
                 print('wxpay_resp_dict', wxpay_resp_dict)
                 url = wxpay_resp_dict.get('code_url', '')
+                if not url:
+                    url = wxpay_resp_dict.get('mweb_url', '')
+                if not url:
+                    resp['code'] = 404
+                    resp['msg'] = '支付渠道不正确'
+                    return Response(resp)
                 if str(plat_type) == '0':
                     url = url + '&redirect_url=' + user.notify_url
                 resp['re_url'] = url
@@ -348,6 +354,8 @@ class GetPayView(views.APIView):
             resp['receive_way'] = receive_way
             # resp['re_url'] = url
             return Response(resp)
+            # return redirect(url)
+
         resp['code'] = 404
         resp['msg'] = 'key匹配错误'
         return Response(resp)

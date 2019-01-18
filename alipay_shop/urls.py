@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf.urls import url, include
 import xadmin
 from user.views import NoticeInfoViewset,ChartInfoViewset, \
-    QueryOrderView,receive_post
+    QueryOrderView,receive_post,make_pay
 from rest_framework.documentation import include_docs_urls
 from rest_framework.routers import DefaultRouter
 from user.views import RegisterUserProfileViewset
@@ -42,4 +42,5 @@ urlpatterns = [
     url(r'^query_order/', QueryOrderView.as_view(), name="query_order"),
     url(r'^redirect_url/', redirect_url, name="redirect_url"),
     url(r'^receive_post/', receive_post, name="receive_post"),
+    url(r'^make_pay/', make_pay, name="receive_post"),
 ]

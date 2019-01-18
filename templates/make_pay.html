@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>make pay</title>
+</head>
+<body>
+<form action="{% url 'get_pay' %}" method="post">
+    {% csrf_token %}
+    <input type="text" name="uid" value="7cf0531c10d711e98efed8cb8a770be3"/>
+    <input type="text" name="auth_code" value="V9aBrYxo9AeSyBJmsH6NkG28ZzaRmFNp"/>
+    <input type="text" name="total_amount" value="0.01"/>
+    <input type="text" name="receive_way" value="WECHAT"/>
+    <input type="text" name="notify_url" value=""/>
+    <input type="text" name="return_url" value="http://127.0.0.1:8000/page2/"/>
+    <input type="text" name="order_id" value="1113111111"/>
+    <input type="text" name="user_msg" value="测试1"/>
+    <input type="text" name="key" value="dc70fb7a5672b2614375946d794c4d10"/>
+    <input type="text" name="plat_type" value="1"/>
+    <input type="submit" value="提交"/>
+</form>
+</body>
+</html>

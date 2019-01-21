@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>微信支付</title>
+</head>
+<body>
+<div class="bg">
+    <img src="../static/wx_bg.png" width="100%" height="100%" alt="" srcset="">
+</div>
+<div class="btn">
+    <form action="{{ pay_url }}" id="url_name" method="post">
+        {% csrf_token %}
+        <button class="button" type="submit">打开微信</button>
+    </form>
+
+</div>
+</body>
+</html>
+<style>
+    body {
+        width: 100%;
+        height: 100%;
+        background-color: #32b660;
+        padding: 0px;
+        margin: 0px;
+        position: fixed;
+    }
+
+    .btn {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    form {
+        text-align: center;
+        width: 100%;
+    }
+
+    .button {
+        background-color: #ffffff;
+        border: none;
+        width: 70%;
+        border-radius: 5px;
+        color: #32b660;
+        height: 3.5rem;
+        font-size: 1.5rem;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        line-height: 3.5rem;
+        margin: 10px 2px;
+        cursor: pointer;
+        font-weight: bold;
+        letter-spacing: 3px;
+
+    }
+</style>
+<script>
+    window.onload = function () {
+        var url = document.getElementById('url_name').getAttribute('action');
+        {#var url = "{{ pay_url }}";#}
+        if (navigator.userAgent.indexOf('iPhone') != -1  && navigator.userAgent.indexOf('UCBrowser') != -1)  {
+            return
+        } else {
+            window.location.href = url;
+            {#var gotoLink = document.createElement('a');#}
+            {#alert(url);#}
+            {#gotoLink.href = url;#}
+            {#document.body.appendChild(gotoLink);#}
+            {#gotoLink.click();#}
+        }
+
+    }
+</script>

@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, HttpResponse
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
@@ -192,14 +193,32 @@ def redirect_url(request):
     else:
         return HttpResponse('链接错误')
 
+
+def wx_redirect(request):
+    # if request.method == 'POST':
+    HTTP_HOST = request.META['HTTP_HOST']
+    print('HTTP_HOST',HTTP_HOST)
+    pay_url = request.get_full_path()
+    url_list = pay_url.split('/wx_redirect/?id=')
+    if len(url_list) == 2:
+        pay_url = url_list[1]
+        if pay_url:
+            return render(request, 'wx_redi.html', {"pay_url": (pay_url)})
+        else:
+            return HttpResponse('链接错误')
+    else:
+        return HttpResponse('链接错误')
+
+
 @csrf_exempt
 def receive_post(request):
     # if request.method=='POST':
     print('接收到post')
     return HttpResponse('success')
 
+
 def make_pay(request):
-    if request.method=='POST':
+    if request.method == 'POST':
         print('接收到post')
         return HttpResponse('success')
-    return render(request,'make_pay.html')
+    return render(request, 'make_pay.html')

@@ -130,10 +130,13 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-	os.path.join(BASE_DIR, 'static')
-]
-# STATIC_ROOT = os.path.join(BASE_DIR,'static/')
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static')
+# ]
+
+STATIC_ROOT = os.path.join(BASE_DIR,'static/')
+
+
 # jwt相关的设置
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=10),
@@ -161,10 +164,13 @@ REST_FRAMEWORK = {
     ),
 }
 # 支付宝配置
-ALIPAY_DEBUG = True
-APP_NOTIFY_URL = "http://27.157.112.11:8000/alipay/receive/"
+ALIPAY_DEBUG = False
+# APP_NOTIFY_URL = "http://27.157.112.11:8000/alipay/receive/"
+APP_NOTIFY_URL = "https://pay.irhau.cn/alipay/receive/"
+
 
 # 微信配置
-WX_NOTIFY_URL = "http://27.157.112.11:8000/wxpay/receive/"
-# APP_NOTIFY_URL = "https://pay.irhau.cn/alipay/receive/"
-APPEND_SLASH=False
+# WX_NOTIFY_URL = "http://27.157.112.11:8000/wxpay/receive/"
+WX_NOTIFY_URL = "https://pay.irhau.cn/wxpay/receive/"
+
+# APPEND_SLASH=False

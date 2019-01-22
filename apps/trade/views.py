@@ -1,4 +1,4 @@
-import re, random, hashlib, time,json
+import re, random, hashlib, time, json
 from datetime import datetime
 import requests
 from django.shortcuts import render, redirect
@@ -19,9 +19,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 from decimal import Decimal
 from django.http import StreamingHttpResponse, HttpResponse
-from wxpay import WXPayUtil,WXPay
+# from wxpay import WXPayUtil, WXPay
+from pywxpay import WXPayUtil,WXPay
 from utils.pay import AliPay
-from alipay_shop.settings import ALIPAY_DEBUG,APP_NOTIFY_URL, WX_NOTIFY_URL
+from alipay_shop.settings import ALIPAY_DEBUG, APP_NOTIFY_URL, WX_NOTIFY_URL
 
 
 class OrderListPagination(PageNumberPagination):
@@ -292,9 +293,9 @@ class GetPayView(views.APIView):
                 # return Response(resp)
 
             elif receive_way == 'WECHAT':
-                # user_ip = request.META.get('REMOTE_ADDR', '')
-                # user_ip = '127.0.0.1'
-                user_ip = '27.157.112.11'
+                user_ip = request.META.get('REMOTE_ADDR', '')
+                # user_ip = '27.157.112.11'
+                print('user_ip', user_ip)
                 c_queryet = WXBusinessInfo.objects.filter(is_active=True).all()
                 if not c_queryet:
                     resp['code'] = 404
@@ -312,7 +313,7 @@ class GetPayView(views.APIView):
                 scene_info = False
                 if str(plat_type) == '1':
                     trade_type = 'MWEB'
-                    scene_info = '{"h5_info": {"type":"Wap","wap_url": "http://zymyun.com/","wap_name": "章鱼猫"}}'
+                    scene_info = '{"h5_info": {"type":"Wap","wap_url": "https://" + request.META["HTTP_HOST"],"wap_name": "微信支付"}}'
                 wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB', body=order_no, detail='',
                                                           out_trade_no=order_no,
                                                           total_fee=int(Decimal(total_amount) * 100),
@@ -332,7 +333,6 @@ class GetPayView(views.APIView):
                     resp['msg'] = '支付渠道不正确'
                     return Response(resp)
                 if str(plat_type) == '1':
-                    # url = url + '&redirect_url=' + user.notify_url
                     url = 'https://' + request.META['HTTP_HOST'] + '/wx_redirect/?id=' + url
                 resp['re_url'] = url
             else:

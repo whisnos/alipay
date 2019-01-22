@@ -23,6 +23,7 @@ from django.http import StreamingHttpResponse, HttpResponse
 from pywxpay import WXPayUtil,WXPay
 from utils.pay import AliPay
 from alipay_shop.settings import ALIPAY_DEBUG, APP_NOTIFY_URL, WX_NOTIFY_URL
+import urllib.parse
 
 
 class OrderListPagination(PageNumberPagination):
@@ -165,7 +166,7 @@ class WxpayReceiveView(views.APIView):
                 user_info = UserProfile.objects.filter(id=user_id)[0]
                 if exited_order.pay_status == 'PAYING':
                     exited_order.trade_no = trade_no
-                    exited_order.pay_status = pay_status
+                    exited_order.pay_status = 'TRADE_SUCCESS'
                     exited_order.pay_time = datetime.now()
                     exited_order.save()
                     # 更新用户收款
@@ -293,8 +294,12 @@ class GetPayView(views.APIView):
                 # return Response(resp)
 
             elif receive_way == 'WECHAT':
-                user_ip = request.META.get('REMOTE_ADDR', '')
-                # user_ip = '27.157.112.11'
+                user_ip = request.META.get('HTTP_X_FORWARDED_FOR','27.157.112.11')
+                print(type(user_ip))
+                if user_ip:
+                    user_ip = user_ip.split(',')[-1]
+                    user_ip = user_ip.strip()
+                user_ip = '27.157.112.10'
                 print('user_ip', user_ip)
                 c_queryet = WXBusinessInfo.objects.filter(is_active=True).all()
                 if not c_queryet:
@@ -333,7 +338,7 @@ class GetPayView(views.APIView):
                     resp['msg'] = '支付渠道不正确'
                     return Response(resp)
                 if str(plat_type) == '1':
-                    url = 'https://' + request.META['HTTP_HOST'] + '/wx_redirect/?id=' + url
+                    url = 'https://' + request.META['HTTP_HOST'] + '/wx_redirect/?id=' + url + '&redirect_url=' + urllib.parse.quote(return_url)
                 resp['re_url'] = url
             else:
                 resp['code'] = 404

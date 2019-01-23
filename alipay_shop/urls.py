@@ -20,7 +20,7 @@ from user.views import NoticeInfoViewset,ChartInfoViewset, \
 from rest_framework.documentation import include_docs_urls
 from rest_framework.routers import DefaultRouter
 from user.views import RegisterUserProfileViewset
-from trade.views import OrderViewset, AlipayReceiveView, GetPayView, WithDrawViewset, TotalNumViewset, WxpayReceiveView
+from trade.views import OrderViewset, AlipayReceiveView, GetPayView, WithDrawViewset, TotalNumViewset, WxpayReceiveView,wx_return
 from rest_framework_jwt.views import obtain_jwt_token
 from user.views import redirect_url,wx_redirect
 route = DefaultRouter()
@@ -44,4 +44,5 @@ urlpatterns = [
     url(r'^wx_redirect/', wx_redirect, name="wx_redirect"),
     url(r'^receive_post/', receive_post, name="receive_post"),
     url(r'^make_pay/', make_pay, name="receive_post"),
+    url(r'^wx_return/', wx_return, name="wx_return"),
 ]

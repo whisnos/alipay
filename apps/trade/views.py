@@ -326,7 +326,8 @@ class GetPayView(views.APIView):
                 resp['code'] = 200
                 resp['total_amount'] = total_amount
                 resp['receive_way'] = receive_way
-                resp['re_url'] = 'https://' + request.META['HTTP_HOST'] + '/get_pay/?id=' + order_no + '&return_url=' + return_url
+                resp['re_url'] = 'https://' + request.META[
+                    'HTTP_HOST'] + '/get_pay/?id=' + order_no + '&return_url=' + return_url
                 if str(plat_type) == '0':
                     c_queryet = WXBusinessInfo.objects.filter(is_active=True).all()
                     if not c_queryet:
@@ -425,11 +426,17 @@ class GetPayView(views.APIView):
                     resp['msg'] = '支付渠道不正确'
                     return Response(resp)
                 # if str(plat_type) == '1':
-                url = 'https://' + request.META['HTTP_HOST'] + '/wx_redirect/?id=' + url + '&redirect_url=' + urllib.parse.quote(return_url)
+                url = 'https://' + request.META['HTTP_HOST'] + '/wx_redirect/?id=' + url + '&redirect_url=' + urllib.parse.quote('https://' + request.META['HTTP_HOST'] +'/wx_return/?return_url=' + return_url)
                 # url = 'http://zymyun.com:8000' + '/wx_redirect/?id=' + url +'&redirect_url=' + urllib.parse.quote(return_url)
-                print('url',url)
+                print('url', url)
                 return redirect(url, True)
         return HttpResponse('查询无效')
+
+
+def wx_return(request):
+    return_url = request.GET.get('return_url', '/')
+
+    return redirect(return_url)
 
 
 class WithDrawViewset(mixins.RetrieveModelMixin, mixins.CreateModelMixin,

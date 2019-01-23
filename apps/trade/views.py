@@ -20,7 +20,7 @@ from rest_framework.pagination import PageNumberPagination
 from decimal import Decimal
 from django.http import StreamingHttpResponse, HttpResponse
 # from wxpay import WXPayUtil, WXPay
-from pywxpay import WXPayUtil,WXPay
+from pywxpay import WXPayUtil, WXPay
 from utils.pay import AliPay
 from alipay_shop.settings import ALIPAY_DEBUG, APP_NOTIFY_URL, WX_NOTIFY_URL
 import urllib.parse
@@ -291,21 +291,111 @@ class GetPayView(views.APIView):
                     url = resp['re_url']
                 else:
                     resp['re_url'] = url
-                # return Response(resp)
+
+                order = OrderInfo()
+                order.user_id = user.id
+                order.order_no = order_no
+                order.pay_status = 'PAYING'
+                order.total_amount = total_amount
+                order.user_msg = user_msg
+                order.order_id = order_id
+                order.receive_way = receive_way
+                order.pay_url = url
+                order.plat_type = str(plat_type)
+                order.save()
+                resp['msg'] = '创建成功'
+                resp['code'] = 200
+                resp['total_amount'] = total_amount
+                resp['receive_way'] = receive_way
+                # resp['re_url'] = url
+                return Response(resp)
 
             elif receive_way == 'WECHAT':
-                user_ip = request.META.get('HTTP_X_FORWARDED_FOR','27.157.112.11')
-                print(type(user_ip))
-                if user_ip:
-                    user_ip = user_ip.split(',')[-1]
-                    user_ip = user_ip.strip()
-                user_ip = '27.157.112.10'
+                order = OrderInfo()
+                order.user_id = user.id
+                order.order_no = order_no
+                order.pay_status = 'PAYING'
+                order.total_amount = total_amount
+                order.user_msg = user_msg
+                order.order_id = order_id
+                order.receive_way = receive_way
+                order.plat_type = str(plat_type)
+                order.pay_url = 'https://' + request.META['HTTP_HOST'] + '/get_pay/?id=' + order_no
+                order.save()
+                resp['msg'] = '创建成功'
+                resp['code'] = 200
+                resp['total_amount'] = total_amount
+                resp['receive_way'] = receive_way
+                resp['re_url'] = 'https://' + request.META['HTTP_HOST'] + '/get_pay/?id=' + order_no + '&return_url=' + return_url
+                if str(plat_type) == '0':
+                    c_queryet = WXBusinessInfo.objects.filter(is_active=True).all()
+                    if not c_queryet:
+                        resp['code'] = 404
+                        resp['msg'] = '收款商户未激活'
+                        return Response(resp)
+                    receive_c = random.choice(c_queryet)
+                    wx_appid = receive_c.wx_appid
+                    wx_mchid = receive_c.wx_mchid
+                    wxapi_key = receive_c.wxapi_key
+                    # 96537e694e4b1ce3e2bfb6cbd3cac3aa
+                    wxpay = WXPay(app_id=wx_appid, mch_id=wx_mchid, key=wxapi_key, cert_pem_path=None,
+                                  key_pem_path=None,
+                                  timeout=600.0, use_sandbox=False)
+
+                    trade_type = 'NATIVE'
+                    scene_info = False
+
+                    wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB', body=order_id, detail='',
+                                                              out_trade_no=order_id,
+                                                              total_fee=int(Decimal(total_amount) * 100),
+                                                              fee_type='CNY',
+                                                              notify_url=WX_NOTIFY_URL,
+                                                              spbill_create_ip='27.157.112.11',
+                                                              trade_type=trade_type,
+                                                              scene_info=scene_info)
+                                                         )
+
+                    print('wxpay_resp_dict', wxpay_resp_dict)
+                    url = wxpay_resp_dict.get('code_url', '')
+                    if not url:
+                        resp['code'] = 404
+                        resp['msg'] = '支付渠道不正确'
+                        return Response(resp)
+                    resp['re_url'] = url
+                return Response(resp)
+                # return redirect(url)
+            else:
+                resp['code'] = 404
+                resp['msg'] = '该渠道未开通'
+                return Response(resp)
+        resp['code'] = 404
+        resp['msg'] = 'key匹配错误'
+        return Response(resp)
+
+    def get(self, request):
+        order_id = request.GET.get('id', '')
+        return_url = request.GET.get('return_url', '')
+        print('order_id', order_id)
+        resp = {}
+        c_queryet = WXBusinessInfo.objects.filter(is_active=True).all()
+        if not c_queryet:
+            resp['code'] = 404
+            resp['msg'] = '收款商户未激活'
+            return Response(resp)
+        if order_id:
+            order_queryset = OrderInfo.objects.filter(order_no=order_id)
+            if order_queryset:
+                order_obj = order_queryset[0]
+                # plat_type = order_obj.plat_type
+                total_amount = order_obj.total_amount
+
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+                if x_forwarded_for:
+                    user_ip = x_forwarded_for.split(',')[0]  # 所以这里是真实的ip
+                else:
+                    user_ip = request.META.get('REMOTE_ADDR')
+                # user_ip = '27.157.112.11'
                 print('user_ip', user_ip)
-                c_queryet = WXBusinessInfo.objects.filter(is_active=True).all()
-                if not c_queryet:
-                    resp['code'] = 404
-                    resp['msg'] = '收款商户未激活'
-                    return Response(resp)
                 receive_c = random.choice(c_queryet)
                 wx_appid = receive_c.wx_appid
                 wx_mchid = receive_c.wx_mchid
@@ -314,13 +404,10 @@ class GetPayView(views.APIView):
                 wxpay = WXPay(app_id=wx_appid, mch_id=wx_mchid, key=wxapi_key, cert_pem_path=None, key_pem_path=None,
                               timeout=600.0, use_sandbox=False)
 
-                trade_type = 'NATIVE'
-                scene_info = False
-                if str(plat_type) == '1':
-                    trade_type = 'MWEB'
-                    scene_info = '{"h5_info": {"type":"Wap","wap_url": "https://" + request.META["HTTP_HOST"],"wap_name": "微信支付"}}'
-                wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB', body=order_no, detail='',
-                                                          out_trade_no=order_no,
+                trade_type = 'MWEB'
+                scene_info = '{"h5_info": {"type":"Wap","wap_url": "https://" + request.META["HTTP_HOST"],"wap_name": "微信支付"}}'
+                wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB', body=order_id, detail='',
+                                                          out_trade_no=order_id,
                                                           total_fee=int(Decimal(total_amount) * 100),
                                                           fee_type='CNY',
                                                           notify_url=WX_NOTIFY_URL,
@@ -337,35 +424,12 @@ class GetPayView(views.APIView):
                     resp['code'] = 404
                     resp['msg'] = '支付渠道不正确'
                     return Response(resp)
-                if str(plat_type) == '1':
-                    url = 'https://' + request.META['HTTP_HOST'] + '/wx_redirect/?id=' + url + '&redirect_url=' + urllib.parse.quote(return_url)
-                resp['re_url'] = url
-            else:
-                resp['code'] = 404
-                resp['msg'] = '该渠道未开通'
-                return Response(resp)
-
-            order = OrderInfo()
-            order.user_id = user.id
-            order.order_no = order_no
-            order.pay_status = 'PAYING'
-            order.total_amount = total_amount
-            order.user_msg = user_msg
-            order.order_id = order_id
-            order.receive_way = receive_way
-            order.pay_url = url
-            order.save()
-            resp['msg'] = '创建成功'
-            resp['code'] = 200
-            resp['total_amount'] = total_amount
-            resp['receive_way'] = receive_way
-            # resp['re_url'] = url
-            return Response(resp)
-            # return redirect(url)
-
-        resp['code'] = 404
-        resp['msg'] = 'key匹配错误'
-        return Response(resp)
+                # if str(plat_type) == '1':
+                url = 'https://' + request.META['HTTP_HOST'] + '/wx_redirect/?id=' + url + '&redirect_url=' + urllib.parse.quote(return_url)
+                # url = 'http://zymyun.com:8000' + '/wx_redirect/?id=' + url +'&redirect_url=' + urllib.parse.quote(return_url)
+                print('url',url)
+                return redirect(url, True)
+        return HttpResponse('查询无效')
 
 
 class WithDrawViewset(mixins.RetrieveModelMixin, mixins.CreateModelMixin,

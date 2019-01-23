@@ -33,6 +33,8 @@ class OrderInfo(models.Model):
                                    verbose_name='支付类型', default='ALIPAY')
     pay_url = models.TextField(null=True, blank=True, verbose_name='支付链接')
 
+    # plat_type = models.CharField(null=True,blank=True,max_length=10,verbose_name='平台类型')
+
     # time_rate = models.FloatField(null=True,blank=True, verbose_name='当时费率')
 
     def __str__(self):

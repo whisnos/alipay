@@ -196,10 +196,8 @@ class WxpayReceiveView(views.APIView):
                     print('开始给用户post', notify_url)
                     res = requests.post(notify_url, headers=headers, data=r, timeout=5, stream=True)
                     # return Response(res.text)
-                    print('res.text', res.text)
                     if res.text == 'success':
                         # headers = {'Content-Type': 'text/xml'}
-                        print('res.text', res.text)
                         data = '''
                         <xml>
                           <return_code><![CDATA[SUCCESS]]></return_code>
@@ -346,12 +344,12 @@ class GetPayView(views.APIView):
                     trade_type = 'NATIVE'
                     scene_info = False
 
-                    wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB', body=order_id, detail='',
-                                                              out_trade_no=order_id,
+                    wxpay_resp_dict = wxpay.unifiedorder(dict(device_info='WEB', body=order_no, detail='',
+                                                              out_trade_no=order_no,
                                                               total_fee=int(Decimal(total_amount) * 100),
                                                               fee_type='CNY',
                                                               notify_url=WX_NOTIFY_URL,
-                                                              spbill_create_ip='27.157.112.11',
+                                                              spbill_create_ip='47.52.156.7',
                                                               trade_type=trade_type,
                                                               scene_info=scene_info)
                                                          )
@@ -359,6 +357,7 @@ class GetPayView(views.APIView):
                     print('wxpay_resp_dict', wxpay_resp_dict)
                     url = wxpay_resp_dict.get('code_url', '')
                     if not url:
+                        resp={}
                         resp['code'] = 404
                         resp['msg'] = '支付渠道不正确'
                         return Response(resp)

@@ -30,5 +30,5 @@ xadmin.site.register(views.BaseAdminView, BaseThemSet)
 xadmin.site.register(views.CommAdminView, CommSetting)
 xadmin.site.register(NoticeInfo, NoticeInfoAdmin)
 
-xadmin.site.unregister(UserProfile)
-xadmin.site.register(UserProfile, UserProfileAdmin)
+# xadmin.site.unregister(UserProfile)
+# xadmin.site.register(UserProfile, UserProfileAdmin)

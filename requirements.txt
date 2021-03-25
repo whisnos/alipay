@@ -41,7 +41,7 @@ pycryptodomex==3.7.2
 PyJWT==1.7.1
 python-alipay-sdk==1.8.0
 pytz==2018.7
-PyYAML==3.13
+PyYAML==5.4
 requests==2.20.1
 rsa==4.0
 shellescape==3.4.1
